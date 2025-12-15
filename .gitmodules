@@ -1,0 +1,3 @@
+[submodule "puzzlescript"]
+	path = puzzlescript
+	url = git@github.com:AStox/PuzzleScript.git

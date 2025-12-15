@@ -1,0 +1,15 @@
+{
+  "name": "ghost-hunters",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "node tools/dev-server.js",
+    "export": "node tools/export-html.js",
+    "play": "node tools/play.js"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "express": "^4.18.2",
+    "open": "^9.1.0",
+    "ws": "^8.14.2"
+  }
+}
