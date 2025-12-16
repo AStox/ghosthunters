@@ -4,10 +4,14 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
-const SOURCE_PATH = path.join(ROOT_DIR, 'game', 'game.pzs');
+const DEFAULT_SOURCE_PATH = path.join(ROOT_DIR, 'game', 'game.pzs');
 const TEMPLATE_PATH = path.join(ROOT_DIR, 'puzzlescript', 'standalone_inlined.txt');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
 const OUTPUT_PATH = path.join(DIST_DIR, 'game.html');
+
+// Allow custom source file via --source=path argument
+const sourceArg = process.argv.find(arg => arg.startsWith('--source='));
+const SOURCE_PATH = sourceArg ? sourceArg.split('=')[1] : DEFAULT_SOURCE_PATH;
 
 function stripArmorGamesElements(html) {
   // Remove the Armor Games footer

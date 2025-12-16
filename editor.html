@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ghost Hunters - Level Editor</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;600;700&display=swap');
+    
+    :root {
+      --bg-dark: #0a0a0f;
+      --bg-panel: #12121a;
+      --bg-tile: #1a1a25;
+      --border: #2a2a3a;
+      --accent: #7c3aed;
+      --accent-glow: #a855f7;
+      --text: #e4e4e7;
+      --text-dim: #71717a;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .app {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+      gap: 1px;
+      background: var(--border);
+    }
+    
+    header {
+      grid-column: 1 / -1;
+      background: var(--bg-panel);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-glow));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    
+    .logo h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--text), var(--text-dim));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    select {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-tile);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      min-width: 180px;
+    }
+    
+    select:hover {
+      border-color: var(--accent);
+    }
+    
+    button {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.5rem 1.25rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-glow));
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+    }
+    
+    .btn-secondary {
+      background: var(--bg-tile);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    
+    .btn-secondary:hover {
+      border-color: var(--accent);
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-play {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+    }
+    
+    .btn-play:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+    
+    .btn-save {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+    }
+    
+    .btn-save:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+    
+    .sidebar {
+      background: var(--bg-panel);
+      padding: 1rem;
+      overflow-y: auto;
+      max-height: calc(100vh - 60px);
+    }
+    
+    .sidebar h2 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+      padding: 0 0.25rem;
+    }
+    
+    .palette {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem 0.5rem;
+      padding-bottom: 1rem;
+    }
+    
+    .tile-btn {
+      aspect-ratio: 1;
+      background: var(--bg-tile);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 4px;
+      transition: all 0.15s;
+      position: relative;
+      overflow: visible;
+      margin-bottom: 14px;
+    }
+    
+    .tile-btn:hover {
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+    
+    .tile-btn.selected {
+      border-color: var(--accent-glow);
+      box-shadow: 0 0 0 2px var(--accent), 0 0 20px rgba(168, 85, 247, 0.3);
+    }
+    
+    .tile-btn canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+    }
+    
+    .tile-btn .tile-char {
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-dim);
+      background: var(--bg-dark);
+      padding: 0 3px;
+      border-radius: 2px;
+    }
+    
+    .tile-btn .tile-name {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--text-dim);
+      font-size: 9px;
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      text-align: center;
+    }
+    
+    .main {
+      background: var(--bg-dark);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: auto;
+    }
+    
+    .level-container {
+      background: var(--bg-panel);
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    }
+    
+    .level-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .level-info {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      color: var(--text-dim);
+    }
+    
+    .level-grid {
+      display: inline-grid;
+      gap: 1px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .grid-cell {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      transition: all 0.1s;
+      position: relative;
+    }
+    
+    .grid-cell:hover {
+      outline: 2px solid var(--accent-glow);
+      outline-offset: -2px;
+      z-index: 10;
+    }
+    
+    .grid-cell canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+    }
+    
+    .export-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    
+    .export-modal.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    .export-content {
+      background: var(--bg-panel);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow: auto;
+      border: 1px solid var(--border);
+    }
+    
+    .export-content h3 {
+      margin-bottom: 1rem;
+    }
+    
+    .export-content textarea {
+      width: 100%;
+      height: 300px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 1rem;
+      resize: vertical;
+    }
+    
+    .export-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      justify-content: flex-end;
+    }
+    
+    .resize-controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 1rem;
+    }
+    
+    .resize-controls input {
+      width: 60px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      padding: 0.25rem 0.5rem;
+      background: var(--bg-tile);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      text-align: center;
+    }
+    
+    .resize-controls span {
+      color: var(--text-dim);
+      font-size: 0.875rem;
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--success);
+      color: white;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+    }
+    
+    .toast.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .tool-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    
+    .tool-btn {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 0.75rem;
+    }
+    
+    .tool-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">👻</div>
+        <h1>Ghost Hunters Editor</h1>
+      </div>
+      <div class="controls">
+        <select id="levelSelect"></select>
+<button class="btn-secondary" id="newLevelBtn">New Level</button>
+                <button class="btn-save" id="saveBtn">💾 Save</button>
+                <button class="btn-primary" id="exportBtn">Export</button>
+                <button class="btn-success" id="copyBtn">Copy to Clipboard</button>
+                <button class="btn-play" id="playBtn">▶ Play</button>
+      </div>
+    </header>
+    
+    <aside class="sidebar">
+      <h2>Tile Palette</h2>
+      <div class="palette" id="palette"></div>
+      
+      <div class="tool-buttons">
+        <button class="tool-btn active" id="paintTool">Paint</button>
+        <button class="tool-btn" id="eraseTool">Erase</button>
+      </div>
+    </aside>
+    
+    <main class="main">
+      <div class="level-container">
+        <div class="level-header">
+          <span class="level-info" id="levelInfo">Level 1 - 17x11</span>
+          <div class="resize-controls">
+            <span>Size:</span>
+            <input type="number" id="widthInput" min="5" max="50" value="17">
+            <span>×</span>
+            <input type="number" id="heightInput" min="5" max="50" value="11">
+            <button class="btn-secondary" id="resizeBtn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Apply</button>
+          </div>
+        </div>
+        <div class="level-grid" id="levelGrid"></div>
+      </div>
+    </main>
+  </div>
+  
+  <div class="export-modal" id="exportModal">
+    <div class="export-content">
+      <h3>Export Level</h3>
+      <textarea id="exportText" readonly></textarea>
+      <div class="export-actions">
+        <button class="btn-secondary" id="closeExport">Close</button>
+        <button class="btn-primary" id="copyExport">Copy</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="toast" id="toast">Copied to clipboard!</div>
+
+  <script>
+    // PuzzleScript color name to CSS color mapping (matches PuzzleScript's colors.js)
+    const PS_COLORS = {
+      'black': '#000000',
+      'white': '#ffffff',
+      'lightgray': '#9d9d9d',
+      'lightgrey': '#9d9d9d',
+      'gray': '#808080',
+      'grey': '#808080',
+      'darkgray': '#4d4d4d',
+      'darkgrey': '#4d4d4d',
+      'red': '#be2633',
+      'darkred': '#732930',
+      'lightred': '#e06f8b',
+      'brown': '#a46422',
+      'darkbrown': '#493c2b',
+      'lightbrown': '#eeb62f',
+      'orange': '#eb8931',
+      'yellow': '#f7e26b',
+      'green': '#44891a',
+      'darkgreen': '#2f484e',
+      'lightgreen': '#a3ce27',
+      'blue': '#1d57f7',
+      'lightblue': '#b2dcef',
+      'darkblue': '#1b2632',
+      'purple': '#342a97',
+      'pink': '#de65e2',
+      'transparent': 'transparent',
+      // Additional aliases
+      'cyan': '#31a2f2',
+      'magenta': '#de65e2',
+      'tan': '#d2aa87',
+      'beige': '#d2aa87',
+    };
+    
+    function parseColor(colorStr) {
+      const lower = colorStr.trim().toLowerCase();
+      if (PS_COLORS[lower]) return PS_COLORS[lower];
+      // Handle hex colors
+      if (lower.startsWith('#')) return colorStr.trim();
+      // Handle rgb/rgba
+      if (lower.startsWith('rgb')) return colorStr.trim();
+      console.warn('Unknown color:', colorStr);
+      return '#ff00ff'; // magenta for unknown
+    }
+    
+    // Parser state
+    let gameData = {
+      objects: {},
+      legend: {},
+      levels: [],
+      rawSource: ''
+    };
+    
+    let currentLevel = 0;
+    let selectedTile = '.';
+    let currentTool = 'paint';
+    let levelGrid = [];
+    
+    // Parse the PuzzleScript source
+    function parsePZS(source) {
+      gameData.rawSource = source;
+      const lines = source.split('\n');
+      let section = null;
+      let currentObject = null;
+      let objectLines = [];
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+        const upperTrimmed = trimmed.toUpperCase();
+        
+        // Skip separator lines (any line of = signs)
+        if (/^=+$/.test(trimmed)) continue;
+        
+        // Section detection
+        if (upperTrimmed === 'OBJECTS') {
+          if (section === 'objects' && currentObject) {
+            finalizeObject(currentObject, objectLines);
+          }
+          section = 'objects';
+          currentObject = null;
+          objectLines = [];
+          continue;
+        }
+        if (upperTrimmed === 'LEGEND') {
+          if (section === 'objects' && currentObject) {
+            finalizeObject(currentObject, objectLines);
+          }
+          section = 'legend';
+          continue;
+        }
+        if (upperTrimmed === 'SOUNDS' || upperTrimmed === 'COLLISIONLAYERS' || 
+            upperTrimmed === 'RULES' || upperTrimmed === 'WINCONDITIONS') {
+          if (section === 'objects' && currentObject) {
+            finalizeObject(currentObject, objectLines);
+          }
+          section = upperTrimmed.toLowerCase();
+          continue;
+        }
+        if (upperTrimmed === 'LEVELS') {
+          section = 'levels';
+          continue;
+        }
+        
+        // Parse based on section
+        if (section === 'objects') {
+          if (trimmed === '' || trimmed.startsWith('(')) continue;
+          
+          // Check if this is a new object name (letters/numbers only, not a pattern line, not a color line)
+          const isPatternLine = /^[.0-4]+$/.test(trimmed);
+          
+          // Check if this could be a color line (all words are known colors)
+          const colorNames = Object.keys(PS_COLORS);
+          const words = trimmed.toLowerCase().split(/\s+/);
+          const isColorLine = words.every(w => colorNames.includes(w));
+          
+          const looksLikeObjectName = /^[a-zA-Z][a-zA-Z0-9]*$/.test(trimmed);
+          const isObjectName = looksLikeObjectName && !isPatternLine && !isColorLine;
+          
+          if (isObjectName) {
+            if (currentObject) {
+              finalizeObject(currentObject, objectLines);
+            }
+            currentObject = { name: trimmed, colors: [], pattern: [] };
+            objectLines = [];
+          } else if (currentObject) {
+            objectLines.push(trimmed);
+          }
+        }
+        
+        if (section === 'legend') {
+          if (trimmed === '' || trimmed.startsWith('(')) continue;
+          const match = trimmed.match(/^(.)\s*=\s*(.+)$/);
+          if (match) {
+            const char = match[1];
+            const definition = match[2].toLowerCase();
+            // For compound definitions like "s = Sunup and black", take first object
+            const parts = definition.split(/\s+and\s+|\s+or\s+/);
+            gameData.legend[char] = parts[0].trim();
+          }
+        }
+        
+        if (section === 'levels') {
+          if (trimmed.toLowerCase().startsWith('message')) {
+            const msgMatch = trimmed.match(/^message\s+level\s+(\d+)/i);
+            if (msgMatch) {
+              gameData.levels.push({
+                name: `Level ${msgMatch[1]}`,
+                rows: []
+              });
+            } else if (trimmed.toLowerCase().startsWith('message')) {
+              // Other messages, skip or handle
+            }
+          } else if (trimmed !== '' && gameData.levels.length > 0) {
+            gameData.levels[gameData.levels.length - 1].rows.push(line);
+          }
+        }
+      }
+      
+      // Finalize last object
+      if (section === 'objects' && currentObject) {
+        finalizeObject(currentObject, objectLines);
+      }
+      
+      // Add default background if not in legend
+      if (!gameData.legend['.']) {
+        gameData.legend['.'] = 'background';
+      }
+    }
+    
+    function finalizeObject(obj, lines) {
+      if (lines.length === 0) return;
+      
+      // Separate color lines from pattern lines
+      // Pattern lines contain only dots and digits 0-4
+      // Color lines contain color names separated by spaces
+      const isPatternLine = (s) => /^[.0-4]+$/.test(s);
+      
+      let colorLines = [];
+      let patternLines = [];
+      
+      for (const line of lines) {
+        if (isPatternLine(line)) {
+          patternLines.push(line);
+        } else {
+          colorLines.push(line);
+        }
+      }
+      
+      // Parse colors (first color line, or default to single color if none)
+      if (colorLines.length > 0) {
+        obj.colors = colorLines[0].split(/\s+/).map(c => parseColor(c));
+      } else {
+        // No color line means transparent or single color
+        obj.colors = ['transparent'];
+      }
+      
+      // Parse pattern (up to 5 lines)
+      obj.pattern = patternLines.slice(0, 5).map(row => {
+        const chars = row.split('');
+        return chars.slice(0, 5).map(c => {
+          if (c === '.') return -1;
+          const idx = parseInt(c);
+          return isNaN(idx) ? -1 : idx;
+        });
+      });
+      
+      // Pad pattern to 5x5
+      while (obj.pattern.length < 5) {
+        obj.pattern.push([-1, -1, -1, -1, -1]);
+      }
+      obj.pattern = obj.pattern.map(row => {
+        while (row.length < 5) row.push(-1);
+        return row.slice(0, 5);
+      });
+      
+      gameData.objects[obj.name.toLowerCase()] = obj;
+    }
+    
+    // Render a 5x5 sprite to a canvas
+    function renderSprite(canvas, objectName, scale = 1, legendChar = null) {
+      const ctx = canvas.getContext('2d');
+      const obj = gameData.objects[objectName.toLowerCase()];
+      
+      canvas.width = 5 * scale;
+      canvas.height = 5 * scale;
+      
+      // Always fill with black as base
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      if (!obj) {
+        // Unknown object - just show black
+        return;
+      }
+      
+      // Check if this is a "transparent-only" object (no visible pattern)
+      const hasVisiblePixels = obj.pattern.some(row => 
+        row.some(idx => idx >= 0 && idx < obj.colors.length && obj.colors[idx] !== 'transparent')
+      );
+      
+      if (!hasVisiblePixels) {
+        // Object is fully transparent/invisible - render legend char
+        if (legendChar) {
+          ctx.fillStyle = '#888888';
+          ctx.font = `bold ${Math.floor(scale * 4)}px Arial, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(legendChar.toUpperCase(), Math.floor(canvas.width / 2), Math.floor(canvas.height / 2));
+        }
+        return;
+      }
+      
+      for (let y = 0; y < 5; y++) {
+        for (let x = 0; x < 5; x++) {
+          const colorIdx = obj.pattern[y]?.[x] ?? -1;
+          if (colorIdx >= 0 && colorIdx < obj.colors.length) {
+            const color = obj.colors[colorIdx];
+            // Skip transparent pixels (they show the black background)
+            if (color === 'transparent') continue;
+            ctx.fillStyle = color;
+            ctx.fillRect(x * scale, y * scale, scale, scale);
+          }
+        }
+      }
+    }
+    
+    // Build the tile palette
+    function buildPalette() {
+      const palette = document.getElementById('palette');
+      palette.innerHTML = '';
+      
+      // Tiles to hide from palette (internal/invisible objects not used in level design)
+      const hiddenTiles = [
+        'player1', 'player2', 'player3', 'player4',
+        'pendingup', 'pendingdown', 'pendingleft', 'pendingright',
+        'hunterup', 'hunterdown', 'hunterleft', 'hunterright',
+        'huntertarget', 'directionup', 'directiondown', 'directionleft', 'directionright'
+      ];
+      
+      // Get unique legend entries, filtering out hidden ones
+      const tiles = Object.entries(gameData.legend)
+        .filter(([char, objName]) => !hiddenTiles.includes(objName.toLowerCase()));
+      
+      for (const [char, objName] of tiles) {
+        const btn = document.createElement('div');
+        btn.className = 'tile-btn' + (char === selectedTile ? ' selected' : '');
+        btn.dataset.char = char;
+        
+        const canvas = document.createElement('canvas');
+        renderSprite(canvas, objName, 8, char);
+        btn.appendChild(canvas);
+        
+        const charLabel = document.createElement('span');
+        charLabel.className = 'tile-char';
+        charLabel.textContent = char;
+        btn.appendChild(charLabel);
+        
+        const nameLabel = document.createElement('span');
+        nameLabel.className = 'tile-name';
+        nameLabel.textContent = objName;
+        btn.appendChild(nameLabel);
+        
+        btn.addEventListener('click', () => selectTile(char));
+        palette.appendChild(btn);
+      }
+    }
+    
+    function selectTile(char) {
+      selectedTile = char;
+      document.querySelectorAll('.tile-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.char === char);
+      });
+      // Switch to paint tool when selecting a tile
+      setTool('paint');
+    }
+    
+    function setTool(tool) {
+      currentTool = tool;
+      document.getElementById('paintTool').classList.toggle('active', tool === 'paint');
+      document.getElementById('eraseTool').classList.toggle('active', tool === 'erase');
+    }
+    
+    // Build the level selector
+    function buildLevelSelector() {
+      const select = document.getElementById('levelSelect');
+      select.innerHTML = '';
+      
+      gameData.levels.forEach((level, idx) => {
+        const option = document.createElement('option');
+        option.value = idx;
+        option.textContent = level.name;
+        select.appendChild(option);
+      });
+      
+      select.value = currentLevel;
+    }
+    
+    // Render the current level grid
+    function renderLevel() {
+      const level = gameData.levels[currentLevel];
+      if (!level) return;
+      
+      levelGrid = level.rows.map(row => row.split(''));
+      
+      const height = levelGrid.length;
+      const width = Math.max(...levelGrid.map(r => r.length));
+      
+      // Normalize all rows to same width
+      levelGrid = levelGrid.map(row => {
+        while (row.length < width) row.push('.');
+        return row;
+      });
+      
+      document.getElementById('levelInfo').textContent = `${level.name} - ${width}×${height}`;
+      document.getElementById('widthInput').value = width;
+      document.getElementById('heightInput').value = height;
+      
+      const grid = document.getElementById('levelGrid');
+      grid.innerHTML = '';
+      grid.style.gridTemplateColumns = `repeat(${width}, 24px)`;
+      
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const cell = document.createElement('div');
+          cell.className = 'grid-cell';
+          cell.dataset.x = x;
+          cell.dataset.y = y;
+          
+          const canvas = document.createElement('canvas');
+          renderCellSprite(canvas, x, y);
+          cell.appendChild(canvas);
+          
+          cell.addEventListener('mousedown', (e) => handleCellClick(x, y, e));
+          cell.addEventListener('mouseenter', (e) => {
+            if (e.buttons === 1) handleCellClick(x, y, e);
+          });
+          
+          grid.appendChild(cell);
+        }
+      }
+    }
+    
+    function renderCellSprite(canvas, x, y) {
+      const char = levelGrid[y]?.[x] || '.';
+      const objName = gameData.legend[char] || 'background';
+      renderSprite(canvas, objName, 5, char);
+    }
+    
+    function handleCellClick(x, y, e) {
+      e.preventDefault();
+      
+      const newChar = currentTool === 'erase' ? '.' : selectedTile;
+      levelGrid[y][x] = newChar;
+      
+      // Update the cell canvas
+      const cell = document.querySelector(`.grid-cell[data-x="${x}"][data-y="${y}"]`);
+      if (cell) {
+        const canvas = cell.querySelector('canvas');
+        renderCellSprite(canvas, x, y);
+      }
+      
+      // Update the source level data
+      gameData.levels[currentLevel].rows = levelGrid.map(row => row.join(''));
+    }
+    
+    function resizeLevel() {
+      const newWidth = parseInt(document.getElementById('widthInput').value);
+      const newHeight = parseInt(document.getElementById('heightInput').value);
+      
+      if (newWidth < 5 || newWidth > 50 || newHeight < 5 || newHeight > 50) return;
+      
+      const oldHeight = levelGrid.length;
+      const oldWidth = levelGrid[0]?.length || 0;
+      
+      // Resize rows
+      while (levelGrid.length < newHeight) {
+        levelGrid.push(Array(newWidth).fill('.'));
+      }
+      levelGrid.length = newHeight;
+      
+      // Resize columns
+      levelGrid = levelGrid.map(row => {
+        while (row.length < newWidth) row.push('.');
+        return row.slice(0, newWidth);
+      });
+      
+      gameData.levels[currentLevel].rows = levelGrid.map(row => row.join(''));
+      renderLevel();
+    }
+    
+    function createNewLevel() {
+      const levelNum = gameData.levels.length + 1;
+      const width = 17;
+      const height = 11;
+      
+      const rows = [];
+      for (let y = 0; y < height; y++) {
+        rows.push('.'.repeat(width));
+      }
+      
+      gameData.levels.push({
+        name: `Level ${levelNum}`,
+        rows: rows
+      });
+      
+      currentLevel = gameData.levels.length - 1;
+      buildLevelSelector();
+      renderLevel();
+    }
+    
+    function exportLevel() {
+      const level = gameData.levels[currentLevel];
+      const output = `MESSAGE ${level.name}\n\n${level.rows.join('\n')}`;
+      
+      document.getElementById('exportText').value = output;
+      document.getElementById('exportModal').classList.add('visible');
+    }
+    
+    function exportAllLevels() {
+      let output = '';
+      for (const level of gameData.levels) {
+        output += `MESSAGE ${level.name}\n\n${level.rows.join('\n')}\n\n`;
+      }
+      return output.trim();
+    }
+    
+    // Reconstruct full source with modified levels
+    function reconstructSource() {
+      const source = gameData.rawSource;
+      
+      // Find the LEVELS section
+      const levelsMatch = source.match(/([\s\S]*?)(=+\s*\nLEVELS\s*\n=+\s*\n)([\s\S]*)/i);
+      if (!levelsMatch) {
+        console.error('Could not find LEVELS section');
+        return source;
+      }
+      
+      const beforeLevels = levelsMatch[1];
+      const levelsHeader = levelsMatch[2];
+      const newLevelsContent = exportAllLevels();
+      
+      return beforeLevels + levelsHeader + '\n' + newLevelsContent + '\n';
+    }
+    
+    // Save to temp file for playing
+    async function saveTempFile() {
+      const source = reconstructSource();
+      try {
+        const res = await fetch('/api/save-temp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source })
+        });
+        return res.ok;
+      } catch (err) {
+        console.error('Save temp error:', err);
+        return false;
+      }
+    }
+    
+    // Save to real game file
+    async function saveToFile() {
+      const source = reconstructSource();
+      try {
+        const res = await fetch('/api/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source })
+        });
+        if (res.ok) {
+          // Update our rawSource to match what we saved
+          gameData.rawSource = source;
+          showToast('Saved to game.pzs!');
+          return true;
+        } else {
+          showToast('Failed to save');
+          return false;
+        }
+      } catch (err) {
+        console.error('Save error:', err);
+        showToast('Failed to save');
+        return false;
+      }
+    }
+    
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard!');
+      });
+    }
+    
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 2000);
+    }
+    
+    // Initialize
+    async function init() {
+      // Load the game source
+      try {
+        const response = await fetch('game/game.pzs');
+        const source = await response.text();
+        parsePZS(source);
+        
+        buildPalette();
+        buildLevelSelector();
+        renderLevel();
+      } catch (err) {
+        console.error('Failed to load game:', err);
+        alert('Failed to load game.pzs. Make sure you\'re running this from a web server.');
+      }
+      
+      // Event listeners
+      document.getElementById('levelSelect').addEventListener('change', (e) => {
+        currentLevel = parseInt(e.target.value);
+        renderLevel();
+      });
+      
+      document.getElementById('newLevelBtn').addEventListener('click', createNewLevel);
+      document.getElementById('exportBtn').addEventListener('click', exportLevel);
+      document.getElementById('copyBtn').addEventListener('click', () => {
+        copyToClipboard(exportAllLevels());
+      });
+      
+      document.getElementById('closeExport').addEventListener('click', () => {
+        document.getElementById('exportModal').classList.remove('visible');
+      });
+      
+      document.getElementById('copyExport').addEventListener('click', () => {
+        copyToClipboard(document.getElementById('exportText').value);
+        document.getElementById('exportModal').classList.remove('visible');
+      });
+      
+      document.getElementById('resizeBtn').addEventListener('click', resizeLevel);
+      
+      document.getElementById('playBtn').addEventListener('click', async () => {
+        const levelNum = currentLevel + 1; // Levels are 1-indexed in the game
+        showToast('Saving and launching...');
+        
+        // Save temp file first
+        const saved = await saveTempFile();
+        if (!saved) {
+          showToast('Failed to save temp file');
+          return;
+        }
+        
+        try {
+          const res = await fetch(`/api/play/${levelNum}`, { method: 'POST' });
+          if (res.ok) {
+            showToast(`Playing Level ${levelNum}...`);
+          } else {
+            showToast('Failed to start game');
+          }
+        } catch (err) {
+          console.error('Play error:', err);
+          showToast('Failed to start game');
+        }
+      });
+      
+      document.getElementById('saveBtn').addEventListener('click', saveToFile);
+      
+      document.getElementById('paintTool').addEventListener('click', () => setTool('paint'));
+      document.getElementById('eraseTool').addEventListener('click', () => setTool('erase'));
+      
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'e') setTool('erase');
+        if (e.key === 'p') setTool('paint');
+        if (e.key === 'Escape') {
+          document.getElementById('exportModal').classList.remove('visible');
+        }
+      });
+    }
+    
+    init();
+  </script>
+</body>
+</html>
+
